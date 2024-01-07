@@ -1,11 +1,9 @@
-﻿// See https://aka.ms/new-console-template for more information
-
 using vpa_automation;
 
 var interaction = new InteractionHelper();
 var kubectl = new KubectlWrapper();
 var manifestCreator = new ManifestCreator(kubectl, interaction);
-var recommendationViewer = new RecommendationViewer(kubectl);
+var recommendationViewer = new RecommendationViewer(kubectl, interaction);
 
 
 var commandList = new List<string>()
@@ -32,21 +30,5 @@ while (true)
         default:
             Console.WriteLine("Couldn't find. Try again.");
             break;
-    }
-}
-
-
-public class RecommendationViewer
-{
-    private readonly KubectlWrapper _kubectl;
-
-    public RecommendationViewer(KubectlWrapper kubectl)
-    {
-        _kubectl = kubectl;
-    }
-
-    public void Interact()
-    {
-        throw new NotImplementedException();
     }
 }
