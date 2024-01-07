@@ -15,7 +15,7 @@ public class ManifestCreator
         kind:       Deployment
         name:       {0}
       updatePolicy:
-        updateMode: ""Auto""
+        updateMode: ""Off""
     ";
 
     private readonly KubectlWrapper _kubectl;
