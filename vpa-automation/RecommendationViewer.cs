@@ -96,7 +96,48 @@ public class RecommendationViewer
 
     private void OutputRecommendations(List<Container> containerRecommendations)
     {
-        throw new NotImplementedException();
+        var template = "|{0,25}|{1,12}|{2,12}|{3,12}|{4,12}|{5,12}|{6,12}|";
+        var header = string.Format(template, "", "CPU (req)", "MEM (req)", "CPU (lim)", "MEM (lim)", "CPU (r/t)", "MEM (r/t)");
+        var line = new string('-', header.Length);
+        Console.WriteLine(header);
+        Console.WriteLine(line);
+        foreach (var item in containerRecommendations)
+        {
+            Console.WriteLine(template, 
+                item.DeploymentName, 
+                $"r: {item.Requests.Cpu}",
+                $"r: {item.Requests.Memory}",
+                $"l: {item.Limits.Cpu}",
+                $"l: {item.Limits.Memory}",
+                $"{CalculateDifference(item.Requests.CpuInMillicores, item.Target.CpuInMillicores)}%",
+                $"{CalculateDifference(item.Requests.MemoryInBytes, item.Target.MemoryInBytes)}%"
+
+                );
+            Console.WriteLine(template,
+                item.Name,
+                $"t: {item.Target.Cpu}",
+                $"t: {item.Target.Memory}",
+                $"lb: {item.LowerBound.Cpu}",
+                $"lb: {item.LowerBound.Memory}",
+                "",
+                ""
+            );
+            Console.WriteLine(template,
+                "",
+                $"ut: {item.UncappedTarget.Cpu}",
+                $"ut: {item.UncappedTarget.Memory}",
+                $"ub: {item.UpperBound.Cpu}",
+                $"ub: {item.UpperBound.Memory}",
+                $"",
+                $""
+            );
+            Console.WriteLine(line);
+        }
+    }
+
+    private string CalculateDifference(long request, long target)
+    {
+        return request == 0 ? "N/A" : $"{Math.Round(((1.0 * request) / target) * 100)}";
     }
 
     public record ResourcesDto(string Cpu = "N/A", string Memory = "N/A");
@@ -120,6 +161,7 @@ public class RecommendationViewer
 
     public class Resources
     {
+        private readonly List<string> _unitLettersOrder = new List<string> {"K","M","G","T","P","E" };
         public Resources(string cpu, string memory)
         {
             CpuInMillicores = ConvertCpuToDigits(cpu);
@@ -148,11 +190,10 @@ public class RecommendationViewer
             
             var digitValueString = value[..^unitLetterCount];
             var letters = value.Substring(value.Length-unitLetterCount,1);
-            var unitLettersOrder = new List<string> {"K","M","G","T","P","E" };
             if (long.TryParse(digitValueString, out var digitValue))
             {
                 long result = 0;
-                var letterIndex = unitLettersOrder.IndexOf(letters.ToUpper());
+                var letterIndex = _unitLettersOrder.IndexOf(letters.ToUpper());
                 result = (long)(digitValue * Math.Pow(unit, letterIndex + 1));
                 return result;
             }
@@ -160,8 +201,29 @@ public class RecommendationViewer
             return 0; //TODO: fix this
         }
 
+        private int ValueLength(long value)
+        {
+            if (value == 0)
+                return 1;
+            return (int)Math.Floor(Math.Log10(value)) + 1;
+        }
+
         public long CpuInMillicores { get; set; }
         public long MemoryInBytes { get; set; }
+
+        public string Cpu => $"{CpuInMillicores}m";
+        public string Memory
+        {
+            get
+            {
+                var valueLength = ValueLength(MemoryInBytes);
+                var unitIndex = valueLength / 3;
+                var powKoef = unitIndex > 6 ? 6 : unitIndex-(valueLength % 3 > 0 ? 0 : 1);
+                var result = (long)(MemoryInBytes / Math.Pow(1024, powKoef));
+                var unit = powKoef > 0 ? _unitLettersOrder[powKoef-1] + "i" : "";
+                return $"{result}{unit}";
+            }
+        }
     }
 
     public class Container
