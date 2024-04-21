@@ -104,7 +104,7 @@ public class RecommendationViewer
         foreach (var item in containerRecommendations)
         {
             Console.WriteLine(template, 
-                item.DeploymentName, 
+                Truncate(item.DeploymentName,25), 
                 $"r: {item.Requests.Cpu}",
                 $"r: {item.Requests.Memory}",
                 $"l: {item.Limits.Cpu}",
@@ -138,6 +138,11 @@ public class RecommendationViewer
     private string CalculateDifference(long request, long target)
     {
         return request == 0 ? "N/A" : $"{Math.Round(((1.0 * request) / target) * 100)}";
+    }
+
+    private string Truncate(string value, int maxChars)
+    {
+        return value.Length <= maxChars ? value : value.Substring(0, maxChars-2) + "..";
     }
 
     public record ResourcesDto(string Cpu = "N/A", string Memory = "N/A");
@@ -219,9 +224,9 @@ public class RecommendationViewer
                 var valueLength = ValueLength(MemoryInBytes);
                 var unitIndex = valueLength / 3;
                 var powKoef = unitIndex > 6 ? 6 : unitIndex-(valueLength % 3 > 0 ? 0 : 1);
-                var result = (long)(MemoryInBytes / Math.Pow(1024, powKoef));
+                var result = MemoryInBytes / Math.Pow(1024, powKoef);
                 var unit = powKoef > 0 ? _unitLettersOrder[powKoef-1] + "i" : "";
-                return $"{result}{unit}";
+                return $"{result:F1}{unit}";
             }
         }
     }
